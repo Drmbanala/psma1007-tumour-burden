@@ -1,0 +1,13 @@
+item,estimate,lo,hi,note,p
+"uptake time, min",63.95,56.7,73.69999999999999,median (IQR); range 46 to 118; n=343,
+Spearman uptake time vs log2(PSMA-TV+1),-0.028441127665036616,,,,
+kidneys: % change in SUVmean per 10 min later imaging,1.7834543776283462,-0.8090777742782773,4.443746993979225,,0.1793117606609974
+kidneys: interaction PSMA-TV x uptake time,-0.0001711541945128094,,,,0.6468211986147657
+liver: % change in SUVmean per 10 min later imaging,1.7483905611329842,-0.5595218720747419,4.109867296319436,,0.1386921579048245
+liver: interaction PSMA-TV x uptake time,0.0001899556823838266,,,,0.5678349582689017
+spleen: % change in SUVmean per 10 min later imaging,1.8328305676236445,-0.3116896485555465,4.023484246606945,,0.0944208621878855
+spleen: interaction PSMA-TV x uptake time,0.0003110122199659437,,,,0.3018190495096087
+aorta: % change in SUVmean per 10 min later imaging,-7.193567688933888,-9.043915305842987,-5.3055778811266885,,3.7147950586024926e-13
+aorta: interaction PSMA-TV x uptake time,-5.85131031275651e-06,,,,0.984098916940498
+"kidneys: % per doubling of PSMA-TV, studies at or below median uptake time",-4.095112206212548,-6.171089214798275,-1.9732039329013462,"172 studies, 139 patients",0.0001804378810796412
+"kidneys: % per doubling of PSMA-TV, studies above median uptake time",-3.2233087606287625,-5.190190184871179,-1.215623304139335,"171 studies, 142 patients",0.0017631137448819694

@@ -1,0 +1,413 @@
+-------------------------------------------------------------------------------
+      name:  <unnamed>
+       log:  <project> original research/NucRad_AI_Original_
+> Research/02_projects/P01_PSMA_tumour_sink_effect/03_results/stata_models.log
+  log type:  text
+ opened on:  14 Nov 2026, 16:19:43
+
+. import delimited using "analysis_table.csv", clear varnames(1) case(preserve)
+>  bindquote(strict) maxquotedrows(unlimited)
+(encoding automatically selected: ISO-8859-1)
+(239 vars, 597 obs)
+
+. keep if tracer == "18F" & inrange(uptake_series_min, 45, 120)
+(254 observations deleted)
+
+. encode PatientID, gen(pid)
+
+. encode scanner, gen(scan)
+
+. tempname H
+
+. postfile `H' str12 organ str24 term double(beta se pct lo hi p) long(n_scans 
+> n_patients) using "stata_models_results.dta", replace
+(file stata_models_results.dta not found)
+
+. foreach o in liver spleen kidneys {
+  2.     preserve
+  3.     capture confirm numeric variable y_`o'
+  4.     if _rc destring y_`o', replace force
+  5.     keep if y_`o' < . & y_`o' > 0 & x < .
+  6.     gen double ly = ln(y_`o')
+  7.     bysort pid: egen double xm = mean(x)
+  8.     gen double xw = x - xm
+  9.     foreach v in uptake_series_min age_years weight_kg {
+ 10.         quietly summarize `v'
+ 11.         gen double c_`v' = `v' - r(mean)
+ 12.     }
+ 13.     * overall association (aim A)
+.     mixed ly x c_uptake_series_min i.scan c_age_years c_weight_kg || pid:, re
+> ml
+ 14.     post `H' ("`o'") ("overall (aim A)") (_b[x]) (_se[x]) (100*(exp(_b[x])
+> -1)) (100*(exp(_b[x]-1.96*_se[x])-1)) (100*(exp(_b[x]+1.96*_se[x])-1)) (2*nor
+> mal(-abs(_b[x]/_se[x]))) (e(N)) (e(N_g)[1,1])
+ 15.     * within- and between-patient effects (aim B)
+.     mixed ly xw xm c_uptake_series_min i.scan c_age_years c_weight_kg || pid:
+> , reml
+ 16.     foreach t in xw xm {
+ 17.         local lab = cond("`t'" == "xw", "within-patient (aim B)", "between
+> -patient")
+ 18.         post `H' ("`o'") ("`lab'") (_b[`t']) (_se[`t']) (100*(exp(_b[`t'])
+> -1)) (100*(exp(_b[`t']-1.96*_se[`t'])-1)) (100*(exp(_b[`t']+1.96*_se[`t'])-1)
+> ) (2*normal(-abs(_b[`t']/_se[`t']))) (e(N)) (e(N_g)[1,1])
+ 19.     }
+ 20.     restore
+ 21. }
+(0 observations deleted)
+
+Performing EM optimization ...
+
+Performing gradient-based optimization: 
+Iteration 0:  Log restricted-likelihood = -131.72161  
+Iteration 1:  Log restricted-likelihood = -131.69983  
+Iteration 2:  Log restricted-likelihood = -131.69983  
+
+Computing standard errors ...
+
+Mixed-effects REML regression                        Number of obs    =    343
+Group variable: pid                                  Number of groups =    241
+                                                     Obs per group:
+                                                                  min =      1
+                                                                  avg =    1.4
+                                                                  max =      5
+                                                     Wald chi2(6)     =  22.94
+Log restricted-likelihood = -131.69983               Prob > chi2      = 0.0008
+
+------------------------------------------------------------------------------
+          ly | Coefficient  Std. err.      z    P>|z|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+           x |   .0025583   .0067705     0.38   0.706    -.0107117    .0158283
+c_uptake_s~n |   .0017333   .0011677     1.48   0.138    -.0005554     .004022
+             |
+        scan |
+Biograph ..  |  -.0971108   .0757518    -1.28   0.200    -.2455816      .05136
+Discovery..  |  -.1339188   .0830234    -1.61   0.107    -.2966418    .0288042
+             |
+ c_age_years |   .0050356   .0026717     1.88   0.059    -.0002008    .0102719
+ c_weight_kg |   .0056649   .0013874     4.08   0.000     .0029457    .0083841
+       _cons |   2.349866   .0847215    27.74   0.000     2.183815    2.515917
+------------------------------------------------------------------------------
+
+------------------------------------------------------------------------------
+  Random-effects parameters  |   Estimate   Std. err.     [95% conf. interval]
+-----------------------------+------------------------------------------------
+pid: Identity                |
+                  var(_cons) |   .0731327   .0122251      .0527013    .1014849
+-----------------------------+------------------------------------------------
+               var(Residual) |   .0522127   .0075042      .0393947    .0692014
+------------------------------------------------------------------------------
+LR test vs. linear model: chibar2(01) = 39.64         Prob >= chibar2 = 0.0000
+
+Performing EM optimization ...
+
+Performing gradient-based optimization: 
+Iteration 0:  Log restricted-likelihood = -133.69876  
+Iteration 1:  Log restricted-likelihood = -133.67788  
+Iteration 2:  Log restricted-likelihood = -133.67788  
+
+Computing standard errors ...
+
+Mixed-effects REML regression                        Number of obs    =    343
+Group variable: pid                                  Number of groups =    241
+                                                     Obs per group:
+                                                                  min =      1
+                                                                  avg =    1.4
+                                                                  max =      5
+                                                     Wald chi2(7)     =  25.09
+Log restricted-likelihood = -133.67788               Prob > chi2      = 0.0007
+
+------------------------------------------------------------------------------
+          ly | Coefficient  Std. err.      z    P>|z|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+          xw |   .0269098   .0181367     1.48   0.138    -.0086375    .0624572
+          xm |   -.001189   .0072475    -0.16   0.870    -.0153938    .0130157
+c_uptake_s~n |   .0018172   .0011664     1.56   0.119    -.0004689    .0041033
+             |
+        scan |
+Biograph ..  |  -.1092499   .0760656    -1.44   0.151    -.2583357     .039836
+Discovery..  |  -.1506819   .0836992    -1.80   0.072    -.3147294    .0133656
+             |
+ c_age_years |   .0051342   .0026705     1.92   0.055    -.0000998    .0103681
+ c_weight_kg |   .0057371   .0013864     4.14   0.000     .0030199    .0084543
+       _cons |   2.382782    .087649    27.19   0.000     2.210993    2.554571
+------------------------------------------------------------------------------
+
+------------------------------------------------------------------------------
+  Random-effects parameters  |   Estimate   Std. err.     [95% conf. interval]
+-----------------------------+------------------------------------------------
+pid: Identity                |
+                  var(_cons) |   .0732458   .0121731      .0528831    .1014491
+-----------------------------+------------------------------------------------
+               var(Residual) |   .0518404   .0074652      .0390924    .0687455
+------------------------------------------------------------------------------
+LR test vs. linear model: chibar2(01) = 39.89         Prob >= chibar2 = 0.0000
+(1 observation deleted)
+
+Performing EM optimization ...
+
+Performing gradient-based optimization: 
+Iteration 0:  Log restricted-likelihood = -139.06213  
+Iteration 1:  Log restricted-likelihood = -139.06195  
+Iteration 2:  Log restricted-likelihood = -139.06195  
+
+Computing standard errors ...
+
+Mixed-effects REML regression                        Number of obs    =    342
+Group variable: pid                                  Number of groups =    241
+                                                     Obs per group:
+                                                                  min =      1
+                                                                  avg =    1.4
+                                                                  max =      5
+                                                     Wald chi2(6)     =  17.25
+Log restricted-likelihood = -139.06195               Prob > chi2      = 0.0084
+
+------------------------------------------------------------------------------
+          ly | Coefficient  Std. err.      z    P>|z|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+           x |   .0015787   .0071698     0.22   0.826    -.0124739    .0156313
+c_uptake_s~n |   .0018162   .0010842     1.68   0.094    -.0003088    .0039413
+             |
+        scan |
+Biograph ..  |     .12564   .0686347     1.83   0.067    -.0088815    .2601614
+Discovery..  |   .0335065   .0774841     0.43   0.665    -.1183595    .1853725
+             |
+ c_age_years |   .0006183   .0030218     0.20   0.838    -.0053044    .0065409
+ c_weight_kg |   .0043081   .0014181     3.04   0.002     .0015287    .0070875
+       _cons |    2.08155   .0801952    25.96   0.000     1.924371     2.23873
+------------------------------------------------------------------------------
+
+------------------------------------------------------------------------------
+  Random-effects parameters  |   Estimate   Std. err.     [95% conf. interval]
+-----------------------------+------------------------------------------------
+pid: Identity                |
+                  var(_cons) |   .1205676   .0141355      .0958153    .1517144
+-----------------------------+------------------------------------------------
+               var(Residual) |   .0334882   .0047888      .0253029    .0443215
+------------------------------------------------------------------------------
+LR test vs. linear model: chibar2(01) = 95.10         Prob >= chibar2 = 0.0000
+
+Performing EM optimization ...
+
+Performing gradient-based optimization: 
+Iteration 0:  Log restricted-likelihood = -142.18745  
+Iteration 1:  Log restricted-likelihood = -142.18725  
+Iteration 2:  Log restricted-likelihood = -142.18725  
+
+Computing standard errors ...
+
+Mixed-effects REML regression                        Number of obs    =    342
+Group variable: pid                                  Number of groups =    241
+                                                     Obs per group:
+                                                                  min =      1
+                                                                  avg =    1.4
+                                                                  max =      5
+                                                     Wald chi2(7)     =  17.28
+Log restricted-likelihood = -142.18725               Prob > chi2      = 0.0157
+
+------------------------------------------------------------------------------
+          ly | Coefficient  Std. err.      z    P>|z|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+          xw |   .0055308   .0147686     0.37   0.708    -.0234152    .0344767
+          xm |   .0004027   .0081366     0.05   0.961    -.0155449    .0163502
+c_uptake_s~n |   .0018263   .0010873     1.68   0.093    -.0003049    .0039574
+             |
+        scan |
+Biograph ..  |   .1233335    .069316     1.78   0.075    -.0125234    .2591904
+Discovery..  |   .0301708   .0785662     0.38   0.701    -.1238161    .1841577
+             |
+ c_age_years |   .0006415   .0030251     0.21   0.832    -.0052877    .0065707
+ c_weight_kg |   .0043254   .0014219     3.04   0.002     .0015387    .0071122
+       _cons |   2.090281   .0855386    24.44   0.000     1.922629    2.257934
+------------------------------------------------------------------------------
+
+------------------------------------------------------------------------------
+  Random-effects parameters  |   Estimate   Std. err.     [95% conf. interval]
+-----------------------------+------------------------------------------------
+pid: Identity                |
+                  var(_cons) |   .1205924   .0141816      .0957677    .1518521
+-----------------------------+------------------------------------------------
+               var(Residual) |    .033694   .0048426      .0254224     .044657
+------------------------------------------------------------------------------
+LR test vs. linear model: chibar2(01) = 93.90         Prob >= chibar2 = 0.0000
+(0 observations deleted)
+
+Performing EM optimization ...
+
+Performing gradient-based optimization: 
+Iteration 0:  Log restricted-likelihood = -178.68544  
+Iteration 1:  Log restricted-likelihood = -178.66351  
+Iteration 2:  Log restricted-likelihood = -178.66351  
+
+Computing standard errors ...
+
+Mixed-effects REML regression                        Number of obs    =    343
+Group variable: pid                                  Number of groups =    241
+                                                     Obs per group:
+                                                                  min =      1
+                                                                  avg =    1.4
+                                                                  max =      5
+                                                     Wald chi2(6)     =  56.78
+Log restricted-likelihood = -178.66351               Prob > chi2      = 0.0000
+
+------------------------------------------------------------------------------
+          ly | Coefficient  Std. err.      z    P>|z|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+           x |  -.0345905   .0078695    -4.40   0.000    -.0500144   -.0191667
+c_uptake_s~n |   .0017677   .0013163     1.34   0.179    -.0008123    .0043477
+             |
+        scan |
+Biograph ..  |    .231725   .0852044     2.72   0.007     .0647274    .3987227
+Discovery..  |   .2328386   .0939425     2.48   0.013     .0487147    .4169626
+             |
+ c_age_years |  -.0066797   .0031459    -2.12   0.034    -.0128456   -.0005138
+ c_weight_kg |   .0055257   .0016037     3.45   0.001     .0023826    .0086688
+       _cons |    2.51783   .0960863    26.20   0.000     2.329504    2.706156
+------------------------------------------------------------------------------
+
+------------------------------------------------------------------------------
+  Random-effects parameters  |   Estimate   Std. err.     [95% conf. interval]
+-----------------------------+------------------------------------------------
+pid: Identity                |
+                  var(_cons) |   .1097019   .0177171      .0799362    .1505515
+-----------------------------+------------------------------------------------
+               var(Residual) |   .0618062   .0095663      .0456336    .0837104
+------------------------------------------------------------------------------
+LR test vs. linear model: chibar2(01) = 35.06         Prob >= chibar2 = 0.0000
+
+Performing EM optimization ...
+
+Performing gradient-based optimization: 
+Iteration 0:  Log restricted-likelihood = -181.33362  
+Iteration 1:  Log restricted-likelihood = -181.31046  
+Iteration 2:  Log restricted-likelihood = -181.31045  
+
+Computing standard errors ...
+
+Mixed-effects REML regression                        Number of obs    =    343
+Group variable: pid                                  Number of groups =    241
+                                                     Obs per group:
+                                                                  min =      1
+                                                                  avg =    1.4
+                                                                  max =      5
+                                                     Wald chi2(7)     =  57.26
+Log restricted-likelihood = -181.31045               Prob > chi2      = 0.0000
+
+------------------------------------------------------------------------------
+          ly | Coefficient  Std. err.      z    P>|z|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+          xw |  -.0210882   .0198413    -1.06   0.288    -.0599765       .0178
+          xm |  -.0370162   .0085253    -4.34   0.000    -.0537255    -.020307
+c_uptake_s~n |   .0018159   .0013191     1.38   0.169    -.0007695    .0044012
+             |
+        scan |
+Biograph ..  |   .2243899   .0858578     2.61   0.009     .0561117    .3926681
+Discovery..  |   .2226267   .0950377     2.34   0.019     .0363562    .4088971
+             |
+ c_age_years |  -.0066192   .0031484    -2.10   0.036      -.01279   -.0004484
+ c_weight_kg |   .0055687   .0016059     3.47   0.001     .0024212    .0087161
+       _cons |   2.538582    .100169    25.34   0.000     2.342255     2.73491
+------------------------------------------------------------------------------
+
+------------------------------------------------------------------------------
+  Random-effects parameters  |   Estimate   Std. err.     [95% conf. interval]
+-----------------------------+------------------------------------------------
+pid: Identity                |
+                  var(_cons) |    .109732   .0177948      .0798541    .1507888
+-----------------------------+------------------------------------------------
+               var(Residual) |   .0619515   .0096516        .04565    .0840743
+------------------------------------------------------------------------------
+LR test vs. linear model: chibar2(01) = 34.60         Prob >= chibar2 = 0.0000
+
+. postclose `H'
+
+. use "stata_models_results.dta", clear
+
+. format beta se %9.5f
+
+. format pct lo hi %7.2f
+
+. list, noobs sep(3)
+
+  +-----------------------------------------------------------------------+
+  |   organ |                   term |     beta |      se |   pct |    lo |
+  |   liver |        overall (aim A) |  0.00256 | 0.00677 |  0.26 | -1.07 |
+  |----------------------------------+------------------------------------|
+  |       hi     |             p     |     n_scans     |     n_pati~s     |
+  |     1.60     |     .70553297     |         343     |          241     |
+  +-----------------------------------------------------------------------+
+
+  +-----------------------------------------------------------------------+
+  |   organ |                   term |     beta |      se |   pct |    lo |
+  |   liver | within-patient (aim B) |  0.02691 | 0.01814 |  2.73 | -0.86 |
+  |----------------------------------+------------------------------------|
+  |       hi     |             p     |     n_scans     |     n_pati~s     |
+  |     6.44     |     .13788315     |         343     |          241     |
+  +-----------------------------------------------------------------------+
+
+  +-----------------------------------------------------------------------+
+  |   organ |                   term |     beta |      se |   pct |    lo |
+  |   liver |        between-patient | -0.00119 | 0.00725 | -0.12 | -1.53 |
+  |----------------------------------+------------------------------------|
+  |       hi     |             p     |     n_scans     |     n_pati~s     |
+  |     1.31     |     .86968354     |         343     |          241     |
+  +-----------------------------------------------------------------------+
+
+  +-----------------------------------------------------------------------+
+  |   organ |                   term |     beta |      se |   pct |    lo |
+  |  spleen |        overall (aim A) |  0.00158 | 0.00717 |  0.16 | -1.24 |
+  |----------------------------------+------------------------------------|
+  |       hi     |             p     |     n_scans     |     n_pati~s     |
+  |     1.58     |     .82572697     |         342     |          241     |
+  +-----------------------------------------------------------------------+
+
+  +-----------------------------------------------------------------------+
+  |   organ |                   term |     beta |      se |   pct |    lo |
+  |  spleen | within-patient (aim B) |  0.00553 | 0.01477 |  0.55 | -2.31 |
+  |----------------------------------+------------------------------------|
+  |       hi     |             p     |     n_scans     |     n_pati~s     |
+  |     3.51     |     .70803639     |         342     |          241     |
+  +-----------------------------------------------------------------------+
+
+  +-----------------------------------------------------------------------+
+  |   organ |                   term |     beta |      se |   pct |    lo |
+  |  spleen |        between-patient |  0.00040 | 0.00814 |  0.04 | -1.54 |
+  |----------------------------------+------------------------------------|
+  |       hi     |             p     |     n_scans     |     n_pati~s     |
+  |     1.65     |     .96053196     |         342     |          241     |
+  +-----------------------------------------------------------------------+
+
+  +-----------------------------------------------------------------------+
+  |   organ |                   term |     beta |      se |   pct |    lo |
+  | kidneys |        overall (aim A) | -0.03459 | 0.00787 | -3.40 | -4.88 |
+  |----------------------------------+------------------------------------|
+  |       hi     |             p     |     n_scans     |     n_pati~s     |
+  |    -1.90     |     .00001105     |         343     |          241     |
+  +-----------------------------------------------------------------------+
+
+  +-----------------------------------------------------------------------+
+  |   organ |                   term |     beta |      se |   pct |    lo |
+  | kidneys | within-patient (aim B) | -0.02109 | 0.01984 | -2.09 | -5.82 |
+  |----------------------------------+------------------------------------|
+  |       hi     |             p     |     n_scans     |     n_pati~s     |
+  |     1.80     |     .28785205     |         343     |          241     |
+  +-----------------------------------------------------------------------+
+
+  +-----------------------------------------------------------------------+
+  |   organ |                   term |     beta |      se |   pct |    lo |
+  | kidneys |        between-patient | -0.03702 | 0.00853 | -3.63 | -5.23 |
+  |----------------------------------+------------------------------------|
+  |       hi     |             p     |     n_scans     |     n_pati~s     |
+  |    -2.01     |     .00001412     |         343     |          241     |
+  +-----------------------------------------------------------------------+
+
+. export delimited using "stata_models_results.csv", replace
+(file stata_models_results.csv not found)
+file stata_models_results.csv saved
+
+. log close
+      name:  <unnamed>
+       log:  <project> original research/NucRad_AI_Original_
+> Research/02_projects/P01_PSMA_tumour_sink_effect/03_results/stata_models.log
+  log type:  text
+ closed on:  14 Nov 2026, 16:19:45
+-------------------------------------------------------------------------------
