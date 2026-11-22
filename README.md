@@ -4,6 +4,10 @@ Analysis code, protocol and derived data tables for the study
 "Tumour burden and normal-organ uptake of [18F]PSMA-1007: between-patient and within-patient analysis of an open, expert-annotated PET/CT dataset"
 (Banala M, Nasir AA, Makanji R, Sfakianaki E).
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.24438141.svg)](https://doi.org/10.5281/zenodo.24438141)
+
+Archived release: https://doi.org/10.5281/zenodo.24438141 (all versions: https://doi.org/10.5281/zenodo.24438140).
+
 ## Data source
 Imaging data are not redistributed here. They are available as the PSMA-PET-CT-Lesions collection from The Cancer Imaging Archive (https://doi.org/10.7937/r7ep-3x37) and the NCI Imaging Data Commons, under a CC BY 4.0 licence. Data descriptor: Jeblick K et al., Sci Data 2026;13:1023 (https://doi.org/10.1038/s41597-026-07821-z).
 
